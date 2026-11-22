@@ -1,0 +1,859 @@
+{
+  "info": {
+    "_postman_id": "902c5905-42c8-49c7-86af-f83801916d88",
+    "name": "Reels Cinema · Integración PostgreSQL + MongoDB",
+    "description": "Colección del módulo de exposición (api.py). Antes de empezar: ejecutar `python api.py` y revisar las variables de la colección (base_url, id_funcion, id_pelicula, id_staff). Use 'Listar funciones' para escoger un id_funcion programado.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:5000"
+    },
+    {
+      "key": "id_funcion",
+      "value": "28"
+    },
+    {
+      "key": "id_funcion_cancelar",
+      "value": "132"
+    },
+    {
+      "key": "id_pelicula",
+      "value": "18"
+    },
+    {
+      "key": "id_staff",
+      "value": "5"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Estado",
+      "item": [
+        {
+          "name": "Estado de los dos motores",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Respuesta en JSON', function () { pm.response.to.be.json; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/salud",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "salud"
+              ]
+            },
+            "description": "200 si PostgreSQL y MongoDB responden; 503 si alguno no."
+          }
+        },
+        {
+          "name": "Listar funciones de los próximos 7 días",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Respuesta en JSON', function () { pm.response.to.be.json; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/funciones?dias=7",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "funciones"
+              ],
+              "query": [
+                {
+                  "key": "dias",
+                  "value": "7"
+                }
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Caso 1 · Función con requisitos y reseñas",
+      "item": [
+        {
+          "name": "Detalle de una función",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Respuesta en JSON', function () { pm.response.to.be.json; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/funciones/{{id_funcion}}/detalle",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "funciones",
+                "{{id_funcion}}",
+                "detalle"
+              ]
+            },
+            "description": "PostgreSQL (función, película, sala, ventas) -> MongoDB (requisitos por id_funcion, reseñas por id_pelicula)."
+          }
+        },
+        {
+          "name": "Error · id no numérico (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Respuesta en JSON', function () { pm.response.to.be.json; });",
+                  "pm.test('Trae el mensaje de error', function () { pm.expect(pm.response.json()).to.have.property('mensaje'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/funciones/abc/detalle",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "funciones",
+                "abc",
+                "detalle"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Error · función que no existe (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP 404', function () { pm.response.to.have.status(404); });",
+                  "pm.test('Respuesta en JSON', function () { pm.response.to.be.json; });",
+                  "pm.test('Trae el mensaje de error', function () { pm.expect(pm.response.json()).to.have.property('mensaje'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/funciones/99999/detalle",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "funciones",
+                "99999",
+                "detalle"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Caso 2 · Película con su ficha y requisitos",
+      "item": [
+        {
+          "name": "Película con requisitos de sus funciones",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Respuesta en JSON', function () { pm.response.to.be.json; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/peliculas/{{id_pelicula}}/requisitos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "peliculas",
+                "{{id_pelicula}}",
+                "requisitos"
+              ]
+            },
+            "description": "PostgreSQL (película y funciones programadas) -> MongoDB (ficha técnica y requisitos con $in)."
+          }
+        },
+        {
+          "name": "Error · id cero (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Respuesta en JSON', function () { pm.response.to.be.json; });",
+                  "pm.test('Trae el mensaje de error', function () { pm.expect(pm.response.json()).to.have.property('mensaje'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/peliculas/0/requisitos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "peliculas",
+                "0",
+                "requisitos"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Error · película que no existe (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP 404', function () { pm.response.to.have.status(404); });",
+                  "pm.test('Respuesta en JSON', function () { pm.response.to.be.json; });",
+                  "pm.test('Trae el mensaje de error', function () { pm.expect(pm.response.json()).to.have.property('mensaje'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/peliculas/9999/requisitos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "peliculas",
+                "9999",
+                "requisitos"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Caso 3 · Ventas por sala x incidentes",
+      "item": [
+        {
+          "name": "Cruce de ventas e incidentes (60 días)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Respuesta en JSON', function () { pm.response.to.be.json; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/salas/ventas-incidentes?dias=60",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "salas",
+                "ventas-incidentes"
+              ],
+              "query": [
+                {
+                  "key": "dias",
+                  "value": "60"
+                }
+              ]
+            },
+            "description": "GROUP BY por sala en PostgreSQL + $group por id_sala en MongoDB; Python calcula incidentes por cada 100 boletas."
+          }
+        },
+        {
+          "name": "Error · periodo fuera de rango (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Respuesta en JSON', function () { pm.response.to.be.json; });",
+                  "pm.test('Trae el mensaje de error', function () { pm.expect(pm.response.json()).to.have.property('mensaje'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/salas/ventas-incidentes?dias=999",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "salas",
+                "ventas-incidentes"
+              ],
+              "query": [
+                {
+                  "key": "dias",
+                  "value": "999"
+                }
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Transacción cruzada · Cancelar función por falla",
+      "item": [
+        {
+          "name": "Simular fallo en MongoDB → rollback en PostgreSQL (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP 409', function () { pm.response.to.have.status(409); });",
+                  "pm.test('Respuesta en JSON', function () { pm.response.to.be.json; });",
+                  "pm.test('Trae el mensaje de error', function () { pm.expect(pm.response.json()).to.have.property('mensaje'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/funciones/{{id_funcion_cancelar}}/cancelar-por-incidente",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "funciones",
+                "{{id_funcion_cancelar}}",
+                "cancelar-por-incidente"
+              ]
+            },
+            "description": "El reporte no cumple el $jsonSchema: PostgreSQL hace ROLLBACK y la función sigue programada.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_staff\": \"{{id_staff}}\",\n  \"equipo\": \"proyector\",\n  \"descripcion\": \"El proyector se apagó a mitad de la función y no volvió a encender\",\n  \"simular_fallo\": \"mongo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Simular fallo en PostgreSQL → compensación en MongoDB (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP 409', function () { pm.response.to.have.status(409); });",
+                  "pm.test('Respuesta en JSON', function () { pm.response.to.be.json; });",
+                  "pm.test('Trae el mensaje de error', function () { pm.expect(pm.response.json()).to.have.property('mensaje'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/funciones/{{id_funcion_cancelar}}/cancelar-por-incidente",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "funciones",
+                "{{id_funcion_cancelar}}",
+                "cancelar-por-incidente"
+              ]
+            },
+            "description": "MongoDB guardó el reporte, pero PostgreSQL no confirma: se borra el reporte (compensación).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_staff\": \"{{id_staff}}\",\n  \"equipo\": \"proyector\",\n  \"descripcion\": \"El proyector se apagó a mitad de la función y no volvió a encender\",\n  \"simular_fallo\": \"postgres\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Cancelación exitosa en los dos motores (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('Respuesta en JSON', function () { pm.response.to.be.json; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/funciones/{{id_funcion_cancelar}}/cancelar-por-incidente",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "funciones",
+                "{{id_funcion_cancelar}}",
+                "cancelar-por-incidente"
+              ]
+            },
+            "description": "PostgreSQL cancela la función y sus ventas; MongoDB guarda el reporte con el reembolso.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_staff\": \"{{id_staff}}\",\n  \"equipo\": \"proyector\",\n  \"descripcion\": \"El proyector se apagó a mitad de la función y no volvió a encender\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Error · cancelar otra vez la misma función (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP 409', function () { pm.response.to.have.status(409); });",
+                  "pm.test('Respuesta en JSON', function () { pm.response.to.be.json; });",
+                  "pm.test('Trae el mensaje de error', function () { pm.expect(pm.response.json()).to.have.property('mensaje'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/funciones/{{id_funcion_cancelar}}/cancelar-por-incidente",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "funciones",
+                "{{id_funcion_cancelar}}",
+                "cancelar-por-incidente"
+              ]
+            },
+            "description": "El procedimiento sp_cancelar_funcion lo impide.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_staff\": \"{{id_staff}}\",\n  \"equipo\": \"proyector\",\n  \"descripcion\": \"El proyector se apagó a mitad de la función y no volvió a encender\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Error · faltan campos (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Respuesta en JSON', function () { pm.response.to.be.json; });",
+                  "pm.test('Trae el mensaje de error', function () { pm.expect(pm.response.json()).to.have.property('mensaje'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/funciones/{{id_funcion_cancelar}}/cancelar-por-incidente",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "funciones",
+                "{{id_funcion_cancelar}}",
+                "cancelar-por-incidente"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"equipo\": \"sonido\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Error · equipo no válido (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Respuesta en JSON', function () { pm.response.to.be.json; });",
+                  "pm.test('Trae el mensaje de error', function () { pm.expect(pm.response.json()).to.have.property('mensaje'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/funciones/{{id_funcion_cancelar}}/cancelar-por-incidente",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "funciones",
+                "{{id_funcion_cancelar}}",
+                "cancelar-por-incidente"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_staff\": \"{{id_staff}}\",\n  \"equipo\": \"cafetera\",\n  \"descripcion\": \"El proyector se apagó a mitad de la función y no volvió a encender\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Reseñas · validación entre motores",
+      "item": [
+        {
+          "name": "Crear reseña válida (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('Respuesta en JSON', function () { pm.response.to.be.json; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/resenas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "resenas"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_pelicula\": \"{{id_pelicula}}\",\n  \"id_espectador\": 3,\n  \"calificacion\": 5,\n  \"titulo\": \"Imperdible\",\n  \"texto\": \"La vimos en familia y nos encantó.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Error · película que no existe en PostgreSQL (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP 404', function () { pm.response.to.have.status(404); });",
+                  "pm.test('Respuesta en JSON', function () { pm.response.to.be.json; });",
+                  "pm.test('Trae el mensaje de error', function () { pm.expect(pm.response.json()).to.have.property('mensaje'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/resenas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "resenas"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_pelicula\": 9999,\n  \"id_espectador\": 3,\n  \"calificacion\": 5,\n  \"texto\": \"Prueba\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Error · calificación 9 rechazada por $jsonSchema (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Respuesta en JSON', function () { pm.response.to.be.json; });",
+                  "pm.test('Trae el mensaje de error', function () { pm.expect(pm.response.json()).to.have.property('mensaje'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/resenas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "resenas"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_pelicula\": \"{{id_pelicula}}\",\n  \"id_espectador\": 3,\n  \"calificacion\": 9,\n  \"texto\": \"Prueba\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Error · espectador inactivo (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP 409', function () { pm.response.to.have.status(409); });",
+                  "pm.test('Respuesta en JSON', function () { pm.response.to.be.json; });",
+                  "pm.test('Trae el mensaje de error', function () { pm.expect(pm.response.json()).to.have.property('mensaje'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/resenas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "resenas"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_pelicula\": \"{{id_pelicula}}\",\n  \"id_espectador\": 30,\n  \"calificacion\": 4,\n  \"texto\": \"Prueba\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
